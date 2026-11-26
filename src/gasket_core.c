@@ -915,14 +915,20 @@ int gasket_mm_unmap_region(const struct gasket_dev *gasket_dev,
 		return 1;
 
 	/*
-	 * The length passed to zap_vma_ptes MUST BE A MULTIPLE OF
+	 * The length passed to the VMA zapping function MUST BE A MULTIPLE OF
 	 * PAGE_SIZE! Trust me. I have the scars.
 	 *
 	 * Next multiple of y: ceil_div(x, y) * y
 	 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
+	zap_special_vma_range(vma, vma->vm_start + virt_offset,
+			      DIV_ROUND_UP(mappable_region.length_bytes, PAGE_SIZE) *
+			      PAGE_SIZE);
+#else
 	zap_vma_ptes(vma, vma->vm_start + virt_offset,
 		     DIV_ROUND_UP(mappable_region.length_bytes, PAGE_SIZE) *
 		     PAGE_SIZE);
+#endif
 	return 0;
 }
 EXPORT_SYMBOL(gasket_mm_unmap_region);
